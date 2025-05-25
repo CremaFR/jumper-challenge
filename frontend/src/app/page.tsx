@@ -5,27 +5,40 @@ import { mainnet } from 'wagmi/chains'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
 import { injected } from 'wagmi/connectors'
-import { MetaMaskConnect } from '@/components/walletSelector/MetaMaskConnect'
+import { ConnectKitProvider, ConnectKitButton } from 'connectkit'
+import { SignIn } from '@/components/auth/SignInButton'
+import styled from 'styled-components'
 
-// Create a wagmi config with only MetaMask
 const config = createConfig({
   chains: [mainnet],
   transports: {
     [mainnet.id]: http(),
   },
   connectors: [
-    injected({ target: 'metaMask' }), // Specifically target MetaMask
-  ],
+    injected(),
+  ]
 })
 
-// Create a React Query client
 const queryClient = new QueryClient()
+
+const Container = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 10rem;
+  gap: 1rem;
+`;
 
 export default function Home() {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-          <MetaMaskConnect config={config} />
+        <ConnectKitProvider>
+          <Container>
+            <ConnectKitButton />
+            <SignIn />
+          </Container>
+        </ConnectKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   )
