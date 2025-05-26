@@ -8,13 +8,27 @@ export const handleServiceResponse = (serviceResponse: ServiceResponse<any>, res
   return response.status(serviceResponse.statusCode).send(serviceResponse);
 };
 
-export const validateRequest = (schema: ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
-  try {
-    schema.parse({ body: req.body, query: req.query, params: req.params });
-    next();
-  } catch (err) {
-    const errorMessage = `Invalid input: ${(err as ZodError).errors.map((e) => e.message).join(', ')}`;
-    const statusCode = StatusCodes.BAD_REQUEST;
-    res.status(statusCode).send(new ServiceResponse<null>(ResponseStatus.Failed, errorMessage, null, statusCode));
-  }
+type RequestValidationSchemas = {
+  body?: ZodSchema;
+  query?: ZodSchema;
+  params?: ZodSchema;
 };
+
+
+/**
+ * @dev updating this code to prevent body nesting when using zod schemas for OPENAPI documentation
+ **/
+export const validateRequest = (schemas: RequestValidationSchemas) => 
+  (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (schemas.body) schemas.body.parse(req.body);
+      if (schemas.query) schemas.query.parse(req.query);
+      if (schemas.params) schemas.params.parse(req.params);
+      next();
+    } catch (err) {
+      const errorMessage = `Invalid input: ${(err as ZodError).errors.map((e) => e.message).join(', ')}`;
+      res.status(StatusCodes.BAD_REQUEST).send(
+        new ServiceResponse<null>(ResponseStatus.Failed, errorMessage, null, StatusCodes.BAD_REQUEST)
+      );
+    }
+  };

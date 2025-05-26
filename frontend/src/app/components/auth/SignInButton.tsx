@@ -5,6 +5,7 @@ import styled from 'styled-components'
 import { useAtom } from 'jotai'
 import { useSignMessage, useAccount } from 'wagmi'
 import { authTokenAtom } from '@/app/hooks/atoms/authAtoms'
+import { verifySignature } from '@/api/auth' // Import the new function
 
 const SignInButton = styled.button`
   padding: 0.5rem 1rem;
@@ -59,7 +60,7 @@ export function SignIn() {
     setIsSuccess(false)
 
     try {
-      // Create a message to sign
+      // Todo replace with your siwe
       const message = `Sign this message to authenticate to this explorer. Nonce: ${Date.now()}`
       
       let signature;
@@ -75,36 +76,17 @@ export function SignIn() {
         return;
       }
 
-      // Only proceed if we got a signature
       if (!signature) {
         throw new Error('No signature received');
       }
 
-      // Send the signature to the backend for verification
-      const response = await fetch('/api/auth/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          address: address,
-          message,
-          signature,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to verify signature')
-      }
-
-      const data = await response.json()
+      const data = await verifySignature(address, message, signature);
       
-      // Store the JWT token
       setAuthToken(data.token)
       setIsSuccess(true)
     } catch (err) {
       console.error('Signature verification error:', err)
-      setError(err.message || 'Failed to verify signature. Please try again.')
+      setError(err?.message || 'Failed to verify signature. Please try again.')
     } finally {
       setIsLoading(false)
     }

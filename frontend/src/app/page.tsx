@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
 import { injected } from 'wagmi/connectors'
 import { ConnectKitProvider, ConnectKitButton } from 'connectkit'
-import { SignIn } from '@/components/auth/SignInButton'
+import { SignIn } from '@/app/components/auth/SignInButton'
 import styled from 'styled-components'
 
 const config = createConfig({
