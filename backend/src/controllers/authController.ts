@@ -1,27 +1,73 @@
 import { Request, Response } from 'express';
-import { z } from 'zod';
-import { verify } from '@/services/authService';
+import { generateNonce, verifySiwe, verifySession } from '@/services/authService';
 import { handleServiceResponse } from '@/common/utils/httpHandlers';
 import { ServiceResponse, ResponseStatus } from '@/common/models/serviceResponse';
 import { StatusCodes } from 'http-status-codes';
-import { VerifyRequestBody } from '@/schemas/auth/authSchema';
-
+import { SiweVerifyRequestBody } from '@/schemas/auth/authSchema';
 
 /**
- * Controller for handling the verification of a user's signature.
+ * Controller for generating a nonce for SIWE authentication.
  *
- * @param req - The request object containing the user's address, message, and signature.
+ * @param req - The request object.
+ * @param res - The response object to send back the nonce.
+ */
+export const nonceController = async (req: Request, res: Response) => {
+  try {
+    const serviceResponse = await generateNonce();
+    return handleServiceResponse(serviceResponse, res);
+  } catch (error) {
+    console.error('Unexpected error in nonceController:', error);
+    const unexpectedErrorResponse = new ServiceResponse<null>(
+      ResponseStatus.Failed,
+      'An unexpected error occurred',
+      null,
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+    return handleServiceResponse(unexpectedErrorResponse, res);
+  }
+};
+
+/**
+ * Controller for verifying a SIWE message and signature.
+ *
+ * @param req - The request object containing the SIWE message and signature.
  * @param res - The response object to send back the result.
  */
-export const verifyController = async (req: Request<{}, {}, VerifyRequestBody>, res: Response) => {
+export const siweVerifyController = async (req: Request<{}, {}, SiweVerifyRequestBody>, res: Response) => {
   try {
-    const { address, message, signature } = req.body;
+    const { message, signature } = req.body;
 
-    const serviceResponse = await verify(address, message, signature);
+    const serviceResponse = await verifySiwe(message, signature);
 
     return handleServiceResponse(serviceResponse, res);
   } catch (error) {
-    console.error('Unexpected error in verifyController:', error);
+    console.error('Unexpected error in siweVerifyController:', error);
+    const unexpectedErrorResponse = new ServiceResponse<null>(
+      ResponseStatus.Failed,
+      'An unexpected error occurred',
+      null,
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+    return handleServiceResponse(unexpectedErrorResponse, res);
+  }
+};
+
+/**
+ * Controller for verifying a session token.
+ *
+ * @param req - The request object.
+ * @param res - The response object to send back the result.
+ */
+export const sessionController = async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : '';
+
+    const serviceResponse = await verifySession(token);
+
+    return handleServiceResponse(serviceResponse, res);
+  } catch (error) {
+    console.error('Unexpected error in sessionController:', error);
     const unexpectedErrorResponse = new ServiceResponse<null>(
       ResponseStatus.Failed,
       'An unexpected error occurred',

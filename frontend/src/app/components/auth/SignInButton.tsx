@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import styled from 'styled-components'
 import { useAtom } from 'jotai'
-import { useSignMessage, useAccount } from 'wagmi'
+import { useSignMessage, useAccount, useChainId } from 'wagmi'
 import { authTokenAtom } from '@/app/hooks/atoms/authAtoms'
-import { verifySignature } from '@/api/auth' // Import the new function
+import { getNonce, createSiweMessage, verifySiweSignature, verifySession } from '@/api/auth'
 
 const SignInButton = styled.button`
   padding: 0.5rem 1rem;
@@ -42,12 +42,31 @@ const SuccessMessage = styled.p`
 
 export function SignIn() {
   const { address, isConnected } = useAccount()
+  const chainId = useChainId()
   const [authToken, setAuthToken] = useAtom(authTokenAtom)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   
   const { signMessageAsync } = useSignMessage()
+
+  // Check for existing session on component mount
+  useEffect(() => {
+    const checkSession = async () => {
+      if (authToken) {
+        try {
+          await verifySession(authToken)
+          setIsSuccess(true)
+        } catch (err) {
+          // If session validation fails, clear the token
+          console.error('Session validation error:', err)
+          setAuthToken(null)
+        }
+      }
+    }
+    
+    checkSession()
+  }, [authToken, setAuthToken])
 
   const handleSignIn = async () => {
     if (!isConnected || !address) {
@@ -60,33 +79,42 @@ export function SignIn() {
     setIsSuccess(false)
 
     try {
-      // Todo replace with your siwe
-      const message = `Sign this message to authenticate to this explorer. Nonce: ${Date.now()}`
+      // Step 1: Get a nonce from the server
+      const nonce = await getNonce()
       
-      let signature;
+      // Step 2: Create a SIWE message with the nonce
+      const message = createSiweMessage(
+        address,
+        chainId,
+        nonce
+      )
+      
+      // Step 3: Ask the user to sign the message
+      let signature
       try {
         signature = await signMessageAsync({ 
           message 
         })
-        
       } catch (signingError) {
-        console.error('Wallet signing error:', signingError);
-        setError('Wallet signature request was rejected. Please try again.');
-        setIsLoading(false);
-        return;
+        console.error('Wallet signing error:', signingError)
+        setError('Wallet signature request was rejected. Please try again.')
+        setIsLoading(false)
+        return
       }
 
       if (!signature) {
-        throw new Error('No signature received');
+        throw new Error('No signature received')
       }
 
-      const data = await verifySignature(address, message, signature);
+      // Step 4: Verify the signature with the backend
+      const data = await verifySiweSignature(message, signature)
       
-      setAuthToken(data.token)
+      // Step 5: Store the JWT token
+      setAuthToken(data.responseObject.token)
       setIsSuccess(true)
     } catch (err) {
-      console.error('Signature verification error:', err)
-      setError(err?.message || 'Failed to verify signature. Please try again.')
+      console.error('SIWE authentication error:', err)
+      setError(err instanceof Error ? err.message : 'Failed to authenticate. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -98,11 +126,11 @@ export function SignIn() {
         onClick={handleSignIn} 
         disabled={!isConnected || isLoading || !!authToken}
       >
-        {isLoading ? 'Signing...' : authToken ? 'Signed In' : 'Sign In'}
+        {isLoading ? 'Signing...' : authToken ? 'Signed In' : 'Sign In with Ethereum'}
       </SignInButton>
       
       {error && <ErrorMessage>{error}</ErrorMessage>}
-      {isSuccess && <SuccessMessage>Successfully authenticated!</SuccessMessage>}
+      {isSuccess && <SuccessMessage>Successfully authenticated with Ethereum!</SuccessMessage>}
     </>
   )
 }

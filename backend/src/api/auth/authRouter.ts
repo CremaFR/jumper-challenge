@@ -1,27 +1,36 @@
 import express, { Router } from 'express';
-import { z } from 'zod';
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
-import { StatusCodes } from 'http-status-codes';
 
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { validateRequest } from '@/common/utils/httpHandlers';
-import { verifyController } from '@/controllers/authController';
-import { authResponseSchema, verifyRequestSchema } from '@/schemas/auth/authSchema';
+import { nonceController, siweVerifyController, sessionController } from '@/controllers/authController';
+import { authResponseSchema, nonceResponseSchema, siweVerifyRequestSchema } from '@/schemas/auth/authSchema';
 
 export const authRegistry = new OpenAPIRegistry();
 
 export const authRouter: Router = (() => {
   const router = express.Router();
 
+  // SIWE Nonce endpoint
+  authRegistry.registerPath({
+    method: 'get',
+    path: '/api/auth/nonce',
+    tags: ['Auth'],
+    responses: createApiResponse(nonceResponseSchema, 'Success'),
+  });
+
+  router.get('/api/auth/nonce', nonceController);
+
+  // SIWE Verify endpoint
   authRegistry.registerPath({
     method: 'post',
-    path: '/api/auth/verify',
+    path: '/api/auth/siwe',
     tags: ['Auth'],
     request: {
       body: {
         content: {
           'application/json': {
-            schema: verifyRequestSchema,
+            schema: siweVerifyRequestSchema,
           },
         },
       },
@@ -29,7 +38,17 @@ export const authRouter: Router = (() => {
     responses: createApiResponse(authResponseSchema, 'Success'),
   });
 
-  router.post('/api/auth/verify', validateRequest({ body: verifyRequestSchema }), verifyController);
+  router.post('/api/auth/siwe', validateRequest({ body: siweVerifyRequestSchema }), siweVerifyController);
+
+  // Session verification endpoint
+  authRegistry.registerPath({
+    method: 'get',
+    path: '/api/auth/session',
+    tags: ['Auth'],
+    responses: createApiResponse(authResponseSchema, 'Success'),
+  });
+
+  router.get('/api/auth/session', sessionController);
 
   return router;
 })();
