@@ -138,7 +138,7 @@ const getTokenMetadataForContract = async (contractAddress: string, network: str
  * If decimals or balance is null, return raw balance with no decimal places
  */
 const formatTokenBalance = (balance: string | null, decimals: number | null): string => {
-  if (!balance || !decimals) return '0';
+  if (balance === null || decimals === null) return '0';
   
   const decimalBalance = BigInt(balance);
   
