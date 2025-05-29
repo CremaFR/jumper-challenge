@@ -1,6 +1,6 @@
 import express, { Router } from 'express';
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
-
+import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { validateRequest } from '@/common/utils/httpHandlers';
 import { nonceController, siweVerifyController, sessionController } from '@/controllers/authController';
@@ -16,7 +16,10 @@ export const authRouter: Router = (() => {
     method: 'get',
     path: '/api/auth/nonce',
     tags: ['Auth'],
-    responses: createApiResponse(nonceResponseSchema, 'Success'),
+    responses: {
+      ...createApiResponse(nonceResponseSchema, 'Success'),
+      ...createApiResponse(z.null(), 'Internal Server Error', 500)
+    },
   });
 
   router.get('/api/auth/nonce', nonceController);
@@ -35,7 +38,12 @@ export const authRouter: Router = (() => {
         },
       },
     },
-    responses: createApiResponse(authResponseSchema, 'Success'),
+    responses: {
+      ...createApiResponse(authResponseSchema, 'Success'),
+      ...createApiResponse(z.null(), 'Bad Request - Invalid input or signature', 400),
+      ...createApiResponse(z.null(), 'Unauthorized', 401),
+      ...createApiResponse(z.null(), 'Internal Server Error - Authentication failed', 500)
+    },
   });
 
   router.post('/api/auth/siwe', validateRequest({ body: siweVerifyRequestSchema }), siweVerifyController);
@@ -45,7 +53,11 @@ export const authRouter: Router = (() => {
     method: 'get',
     path: '/api/auth/session',
     tags: ['Auth'],
-    responses: createApiResponse(authResponseSchema, 'Success'),
+    responses: {
+      ...createApiResponse(authResponseSchema, 'Success'),
+      ...createApiResponse(z.null(), 'Unauthorized - No valid session found', 401),
+      ...createApiResponse(z.null(), 'Internal Server Error - Session verification failed', 500)
+    },
   });
 
   router.get('/api/auth/session', sessionController);

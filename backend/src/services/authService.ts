@@ -5,6 +5,7 @@ import { ServiceResponse, ResponseStatus } from '@/common/models/serviceResponse
 import { StatusCodes } from 'http-status-codes';
 import { SiweMessage } from 'siwe';
 import crypto from 'crypto';
+import { UserJwtPayload } from '@/types/express';
 
 // Todo : add a DB? 🤔
 const nonceStore = new Map<string, { nonce: string; createdAt: number }>();
@@ -100,7 +101,7 @@ export const verifySession = async (token: string) => {
     }
 
     // Verify the JWT token
-    const decoded = jwt.verify(token, env.JWT_SECRET);
+    const decoded = jwt.verify(token, env.JWT_SECRET) as UserJwtPayload;
 
     return new ServiceResponse(ResponseStatus.Success, 'Valid session', { token, user: decoded }, StatusCodes.OK);
   } catch (error) {

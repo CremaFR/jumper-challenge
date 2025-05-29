@@ -5,6 +5,7 @@ import { pino } from 'pino';
 
 import { healthCheckRouter } from '@/api/healthCheck/healthCheckRouter';
 import { authRouter } from '@/api/auth/authRouter';
+import { tokenRouter } from '@/api/tokens/tokenRouter';
 import { openAPIRouter } from '@/api-docs/openAPIRouter';
 import errorHandler from '@/common/middleware/errorHandler';
 import rateLimiter from '@/common/middleware/rateLimiter';
@@ -30,6 +31,7 @@ app.use(express.json());
 // Routes
 app.use('/health-check', healthCheckRouter);
 app.use(authRouter);
+app.use('/api/tokens', tokenRouter);
 
 // Swagger UI
 app.use(openAPIRouter);

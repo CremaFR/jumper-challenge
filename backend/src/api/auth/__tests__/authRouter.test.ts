@@ -33,7 +33,7 @@ describe('Auth API endpoints', () => {
       message: 'Nonce generated successfully',
       responseObject: { nonce: 'test-nonce-123' },
       statusCode: StatusCodes.OK,
-    } as any);
+    });
   });
 
   afterEach(() => {
@@ -64,7 +64,7 @@ describe('Auth API endpoints', () => {
         message: 'Authentication successful',
         responseObject: { token: 'test-jwt-token' },
         statusCode: StatusCodes.OK,
-      } as any);
+      });
 
       const response = await request(app).post('/api/auth/siwe').send({
         message: 'Valid SIWE message',
@@ -120,10 +120,15 @@ describe('Auth API endpoints', () => {
         message: 'Valid session',
         responseObject: {
           token: 'test-jwt-token',
-          user: { address: '0x0b20714db725d69912A92270d8495BAde2B4A54E' },
+          user: {
+            address: '0x0b20714db725d69912A92270d8495BAde2B4A54E',
+            chainId: 1,
+            issuedAt: '',
+            domain: ''
+          },
         },
         statusCode: StatusCodes.OK,
-      } as any);
+      });
 
       const response = await request(app).get('/api/auth/session').set('Authorization', 'Bearer test-jwt-token');
 
