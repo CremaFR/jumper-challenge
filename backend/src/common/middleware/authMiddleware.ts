@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifySession } from '@/services/authService';
 import { StatusCodes } from 'http-status-codes';
+import { handleServiceResponse } from '@/common/utils/httpHandlers';
+import { ServiceResponse, ResponseStatus } from '@/common/models/serviceResponse';
 
 /**
  * Middleware to check if the user is authenticated.
@@ -12,36 +14,43 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(StatusCodes.UNAUTHORIZED).json({
-        status: 'Failed',
-        message: 'Authentication required',
-        data: null
-      });
+      const unauthorizedResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        'Authentication required',
+        null,
+        StatusCodes.UNAUTHORIZED
+      );
+      return handleServiceResponse(unauthorizedResponse, res);
     }
 
     const token = authHeader.split(' ')[1];
     
     const result = await verifySession(token);
     if (!result.success) {
-      return res.status(result.statusCode).json({
-        status: result.success,
-        message: result.message,
-        data: null
-      });
+      return handleServiceResponse(result, res);
     }
 
     // Add the user data to the request
     if (result.responseObject?.user) {
       req.user = result.responseObject.user;
+      next();
+    } else {
+      const invalidUserResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        'Invalid user data in token',
+        null,
+        StatusCodes.UNAUTHORIZED
+      );
+      return handleServiceResponse(invalidUserResponse, res);
     }
-    
-    next();
   } catch (error) {
     console.error('Auth middleware error:', error);
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      status: 'Failed',
-      message: 'Internal server error during authentication',
-      data: null
-    });
+    const unexpectedErrorResponse = new ServiceResponse(
+      ResponseStatus.Failed,
+      'Internal server error during authentication',
+      null,
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+    return handleServiceResponse(unexpectedErrorResponse, res);
   }
 };
