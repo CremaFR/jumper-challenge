@@ -43,7 +43,7 @@ export const getTokenBalances = async (address: string, chainId: number = 1) => 
         jsonrpc: '2.0',
         id: 1,
         method: 'alchemy_getTokenBalances',
-        params: ['0xd17836dd9dE8b1B37Df44261BA39a1f4632eb788'],
+        params: [address],
       }),
     });
 
