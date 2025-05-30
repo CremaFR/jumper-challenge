@@ -3,9 +3,24 @@ import { StatusCodes } from 'http-status-codes';
 import { TokenBalance, TokenBalancesResponse, TokenMetadataResponse } from 'alchemy-sdk/dist/src/types/types';
 import { getAlchemyApiUrl, getNetworkFromChainId } from '@/common/utils/alchemyUtils';
 
+// Simple in-memory cache for token metadata
+interface TokenMetadataCache {
+  [key: string]: {
+    metadata: TokenMetadataResponse;
+    timestamp: number;
+  };
+}
+
+// Cache with network-specific entries
+// Format: { 'network:contractAddress': { metadata, timestamp } }
+const tokenMetadataCache: TokenMetadataCache = {};
+
+// Cache expiration time in milliseconds (default: 1 hour)
+const CACHE_EXPIRATION_MS = 60 * 60 * 1000;
+
 /**
  * Fetches token balances for a specific Ethereum address.
- * 
+ *
  * @param address - The Ethereum address to fetch balances for
  * @param chainId - The chain ID (defaults to 1 for Ethereum mainnet)
  * @returns A ServiceResponse containing the token balances
@@ -14,10 +29,10 @@ export const getTokenBalances = async (address: string, chainId: number = 1) => 
   try {
     // Determine which network to use based on chainId
     const network = getNetworkFromChainId(chainId);
-    
+
     // Construct the Alchemy API URL
     const alchemyUrl = getAlchemyApiUrl(network);
-    
+
     // Get token balances using Alchemy API
     const response = await fetch(alchemyUrl, {
       method: 'POST',
@@ -28,10 +43,10 @@ export const getTokenBalances = async (address: string, chainId: number = 1) => 
         jsonrpc: '2.0',
         id: 1,
         method: 'alchemy_getTokenBalances',
-        params: ["0xd17836dd9dE8b1B37Df44261BA39a1f4632eb788"]
+        params: ['0xd17836dd9dE8b1B37Df44261BA39a1f4632eb788'],
       }),
     });
-    
+
     const data = await response.json();
 
     if (data.error) {
@@ -52,7 +67,7 @@ export const getTokenBalances = async (address: string, chainId: number = 1) => 
       {
         address,
         chainId,
-        tokens: tokenMetadata
+        tokens: tokenMetadata,
       },
       StatusCodes.OK
     );
@@ -69,12 +84,15 @@ export const getTokenBalances = async (address: string, chainId: number = 1) => 
 
 /**
  * Get metadata for tokens
- *  TODO - cache strategy for token metadata
+ * Small in memory cache to avoid excessive API calls - hit my rate limit haha
+ * Ideally this would be a Redis cache or similar
  */
 const getTokenMetadata = async (tokenBalances: TokenBalance[], network: string) => {
   // Filter out zero balances
-  const nonZeroBalances = tokenBalances.filter(token => token.tokenBalance !== '0x0000000000000000000000000000000000000000000000000000000000000000');
-  
+  const nonZeroBalances = tokenBalances.filter(
+    (token) => token.tokenBalance !== '0x0000000000000000000000000000000000000000000000000000000000000000'
+  );
+
   // Get token metadata for each non-zero balance
   const tokenData = await Promise.all(
     nonZeroBalances.map(async (token) => {
@@ -86,7 +104,7 @@ const getTokenMetadata = async (tokenBalances: TokenBalance[], network: string) 
           decimals: metadata.decimals,
           name: metadata.name,
           symbol: metadata.symbol,
-          formattedBalance: formatTokenBalance(token.tokenBalance, metadata.decimals)
+          formattedBalance: formatTokenBalance(token.tokenBalance, metadata.decimals),
         };
       } catch (error) {
         // Return partial data if metadata fetch fails
@@ -96,7 +114,7 @@ const getTokenMetadata = async (tokenBalances: TokenBalance[], network: string) 
           decimals: null,
           name: null,
           symbol: null,
-          formattedBalance: null
+          formattedBalance: null,
         };
       }
     })
@@ -109,8 +127,17 @@ const getTokenMetadata = async (tokenBalances: TokenBalance[], network: string) 
  * Get metadata for a specific token contract
  */
 const getTokenMetadataForContract = async (contractAddress: string, network: string) => {
+  const cacheKey = `${network}:${contractAddress}`;
+  const cachedEntry = tokenMetadataCache[cacheKey];
+  const currentTime = Date.now();
+
+  // Return cached metadata if not expired
+  if (cachedEntry && currentTime - cachedEntry.timestamp < CACHE_EXPIRATION_MS) {
+    return cachedEntry.metadata;
+  }
+
   const alchemyUrl = getAlchemyApiUrl(network);
-  
+
   const response = await fetch(alchemyUrl, {
     method: 'POST',
     headers: {
@@ -120,15 +147,20 @@ const getTokenMetadataForContract = async (contractAddress: string, network: str
       jsonrpc: '2.0',
       id: 1,
       method: 'alchemy_getTokenMetadata',
-      params: [contractAddress]
+      params: [contractAddress],
     }),
   });
-  
+
   const data = await response.json();
 
   if (data.error) {
     throw new Error(`Failed to get token metadata: ${data.error.message}`);
   }
+
+  tokenMetadataCache[cacheKey] = {
+    metadata: data.result as TokenMetadataResponse,
+    timestamp: currentTime,
+  };
 
   return data.result as TokenMetadataResponse;
 };
@@ -139,7 +171,7 @@ const getTokenMetadataForContract = async (contractAddress: string, network: str
  */
 const formatTokenBalance = (balance: string | null, decimals: number | null): string => {
   if (balance === null || decimals === null) return '0';
-  
+
   const decimalBalance = BigInt(balance);
   
   // Format with proper decimal places - no shiftBy in BigInt :sadge: 
