@@ -1,5 +1,7 @@
-import { config } from "@/config/env";
-import { SiweMessage } from "siwe";
+import { config } from '@/config/env';
+import { SiweMessage } from 'siwe';
+import { ApiError } from './errors';
+import { ServiceResponse, AuthResponseObject, NonceResponseObject } from './types';
 
 /**
  * Fetches a nonce from the backend for SIWE authentication.
@@ -7,19 +9,22 @@ import { SiweMessage } from "siwe";
  * @returns The nonce to be used in SIWE message creation
  * @throws An error if the request fails
  */
-export async function getNonce() {
+export async function getNonce(): Promise<string> {
   const response = await fetch(`${config.apiUrl}/api/auth/nonce`, {
-    method: "GET",
+    method: 'GET',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
   });
 
   if (!response.ok) {
-    throw new Error("Failed to get nonce");
+    throw new ApiError('Failed to get nonce', response.status);
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as ServiceResponse<NonceResponseObject>;
+  if (!data.responseObject) {
+    throw new ApiError('Invalid nonce response', response.status);
+  }
   return data.responseObject.nonce;
 }
 
@@ -31,20 +36,16 @@ export async function getNonce() {
  * @param nonce - The nonce from the server
  * @returns A formatted SIWE message
  */
-export function createSiweMessage(
-  address: string,
-  chainId: number,
-  nonce: string
-) {
+export function createSiweMessage(address: string, chainId: number, nonce: string): string {
   const domain = window.location.host;
   const origin = window.location.origin;
 
   const message = new SiweMessage({
     domain,
     address,
-    statement: "Sign in with Ethereum to the app.",
+    statement: 'Sign in with Ethereum to the app.',
     uri: origin,
-    version: "1",
+    version: '1',
     chainId,
     nonce,
   });
@@ -60,11 +61,14 @@ export function createSiweMessage(
  * @returns The parsed JSON response from the backend if successful
  * @throws An error if the request fails
  */
-export async function verifySiweSignature(message: string, signature: string) {
+export async function verifySiweSignature(
+  message: string,
+  signature: string
+): Promise<ServiceResponse<AuthResponseObject>> {
   const response = await fetch(`${config.apiUrl}/api/auth/siwe`, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       message,
@@ -73,10 +77,10 @@ export async function verifySiweSignature(message: string, signature: string) {
   });
 
   if (!response.ok) {
-    throw new Error("Failed to verify SIWE signature");
+    throw new ApiError('Failed to verify SIWE signature', response.status);
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as ServiceResponse<AuthResponseObject>;
   return data;
 }
 
@@ -87,20 +91,20 @@ export async function verifySiweSignature(message: string, signature: string) {
  * @returns The parsed JSON response from the backend if successful
  * @throws An error if the request fails
  */
-export async function verifySession(token: string) {
+export async function verifySession(token: string): Promise<ServiceResponse<AuthResponseObject>> {
   const response = await fetch(`${config.apiUrl}/api/auth/session`, {
-    method: "GET",
+    method: 'GET',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
   });
 
   if (!response.ok) {
-    throw new Error("Failed to verify session");
+    throw new ApiError('Failed to verify session', response.status);
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as ServiceResponse<AuthResponseObject>;
   return data;
 }
 
@@ -117,11 +121,11 @@ export async function verifySignature(
   address: string,
   message: string,
   signature: string
-) {
+): Promise<ServiceResponse<AuthResponseObject>> {
   const response = await fetch(`${config.apiUrl}/api/auth/verify`, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       address,
@@ -131,9 +135,9 @@ export async function verifySignature(
   });
 
   if (!response.ok) {
-    throw new Error("Failed to verify signature");
+    throw new ApiError('Failed to verify signature', response.status);
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as ServiceResponse<AuthResponseObject>;
   return data;
 }
