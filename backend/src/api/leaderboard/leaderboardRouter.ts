@@ -7,7 +7,7 @@ import {
   leaderboardResponseSchema, 
   userRankResponseSchema
 } from '@/schemas/leaderboard/leaderboardSchema';
-import { requireAuth } from '@/common/middleware/authMiddleware';
+import { createProtectedRoute } from '@/common/utils/routeHandlers';
 
 export const leaderboardRegistry = new OpenAPIRegistry();
 
@@ -62,7 +62,7 @@ export const leaderboardRouter: Router = (() => {
     },
   });
 
-  router.get('/api/leaderboard/me', requireAuth, getUserRankController);
+  router.get('/api/leaderboard/me', ...createProtectedRoute(getUserRankController));
 
   return router;
 })();

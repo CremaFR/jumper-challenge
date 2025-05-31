@@ -1,11 +1,11 @@
 import express, { Router } from 'express';
 import { tokenBalanceQuerySchema, tokenDataSchema } from '@/schemas/token/tokenSchema';
 import { getUserTokenBalances } from '@/controllers/tokenController';
-import { requireAuth } from '@/common/middleware/authMiddleware';
 import { validateRequest } from '@/common/utils/httpHandlers';
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
+import { createProtectedRoute } from '@/common/utils/routeHandlers';
 
 export const tokenRegistry = new OpenAPIRegistry();
 export const tokenRouter: Router = (() => {
@@ -41,7 +41,7 @@ tokenRegistry.registerPath({
   },
 });
 
-router.get('/balances', requireAuth, validateRequest({ query: tokenBalanceQuerySchema }), getUserTokenBalances);
+router.get('/balances', validateRequest({ query: tokenBalanceQuerySchema }), ...createProtectedRoute(getUserTokenBalances));
   return router;
 
 })();

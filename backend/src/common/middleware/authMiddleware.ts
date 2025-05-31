@@ -9,7 +9,7 @@ import { ServiceResponse, ResponseStatus } from '@/common/models/serviceResponse
  * Extracts the JWT token from the Authorization header and verifies it.
  * If valid, adds the user to the request object.
  */
-export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
+export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
     
@@ -25,7 +25,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
 
     const token = authHeader.split(' ')[1];
     
-    const result = await verifySession(token);
+    const result = verifySession(token);
     if (!result.success) {
       return handleServiceResponse(result, res);
     }

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { getLeaderboard, getUserRank } from '@/services/leaderboardService';
 import { handleServiceResponse } from '@/common/utils/httpHandlers';
-import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse';
+import { AuthenticatedRequest } from '@/types/authenticatedRequest';
 
 /**
  * Get the leaderboard entries.
@@ -23,17 +23,7 @@ export const getLeaderboardController = async (req: Request, res: Response) => {
  * @param req - Request object with user data
  * @param res - Express response object
  */
-export const getUserRankController = async (req: Request, res: Response) => {
-  if (!req.user || !req.user.address) {
-    const unauthorizedResponse = new ServiceResponse(
-      ResponseStatus.Failed,
-      'User not authenticated',
-      null,
-      401
-    );
-    return handleServiceResponse(unauthorizedResponse, res);
-  }
-
+export const getUserRankController = async (req: AuthenticatedRequest, res: Response) => {
   const result = await getUserRank(req.user.address);
   return handleServiceResponse(result, res);
 };

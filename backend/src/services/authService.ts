@@ -98,7 +98,7 @@ export const verifySiwe = async (message: string, signature: string) => {
  * @param token - The JWT token to verify.
  * @returns A ServiceResponse containing the session data or an error message.
  */
-export const verifySession = async (token: string) => {
+export const verifySession = (token: string) => {
   try {
     if (!token) {
       return new ServiceResponse<null>(ResponseStatus.Failed, 'No token provided', null, StatusCodes.UNAUTHORIZED);
