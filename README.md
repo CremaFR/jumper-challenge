@@ -1,15 +1,24 @@
 # Jumper challenge
 
-## Getting start
+## frontend
 
-There's 2 directories into this repository with a README.md for each of those to have more informations about their respective setup.
+- Create `.env`: Copy `.env.template` to `.env` 
 
-### frontend
+```bash
+pnpm i
 
-classic nextjs implementation within the material ui 5 setup.
+pnpm dev
+```
 
-### backend
+## backend
 
-expressjs 4 with some default routes and examples.
+### Step 1: 🚀 Initial Setup
+
+- Install dependencies: `pnpm install`
+
+### Step 2: ⚙️ Environment Configuration
+
+- Create `.env`: Copy `.env.template` to `.env`
+- Update `.env`: Fill in necessary environment variables (ALCHEMY_API_KEY)
 
 ## Enjoy!

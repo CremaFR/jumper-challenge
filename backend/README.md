@@ -4,13 +4,12 @@
 
 ### Step 1: 🚀 Initial Setup
 
-- Install dependencies: `npm install`
+- Install dependencies: `pnpm install`
 
 ### Step 2: ⚙️ Environment Configuration
 
 - Create `.env`: Copy `.env.template` to `.env`
-- Update `.env`: Fill in necessary environment variables
-- Enter your ALCHEMY_API_KEY
+- Update `.env`: Fill in necessary environment variables (ALCHEMY_API_KEY)
 
 ### Step 3: 🗄️ Database Setup
 
@@ -24,7 +23,7 @@
 
 ### Step 4: 🏃‍♂️ Running the Project
 
-- Development Mode: `npm run dev`
+- Development Mode: `pnpm run dev`
 - Building: `npm run build`
 - Production Mode: Set `.env` to `NODE_ENV="production"` then `npm run build && npm run start`
 
