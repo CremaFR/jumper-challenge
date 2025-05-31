@@ -3,9 +3,10 @@ import { OpenApiGeneratorV3, OpenAPIRegistry } from '@asteasolutions/zod-to-open
 import { healthCheckRegistry } from '@/api/healthCheck/healthCheckRouter';
 import { authRegistry } from '@/api/auth/authRouter'; 
 import { tokenRegistry } from '@/api/tokens/tokenRouter';
+import { leaderboardRegistry } from '@/api/leaderboard/leaderboardRouter';
 
 export function generateOpenAPIDocument() {
-  const registry = new OpenAPIRegistry([healthCheckRegistry, authRegistry, tokenRegistry]);
+  const registry = new OpenAPIRegistry([healthCheckRegistry, authRegistry, tokenRegistry, leaderboardRegistry]);
   
   // Register security scheme in the registry
   registry.registerComponent('securitySchemes', 'bearerAuth', {

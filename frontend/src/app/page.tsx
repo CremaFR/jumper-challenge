@@ -1,25 +1,11 @@
 'use client';
-import { createConfig, http } from 'wagmi';
-import { mainnet, sepolia, polygon } from 'wagmi/chains';
-import { WagmiProvider } from 'wagmi';
-import { injected } from 'wagmi/connectors';
-import { ConnectKitProvider, ConnectKitButton } from 'connectkit';
+import { ConnectKitButton } from 'connectkit';
 import { SignIn } from '@/app/components/auth/SignInButton';
 import { TokenBalances } from '@/app/components/tokens/TokenBalances';
 import { Header } from '@/app/components/common/Header';
 import styled from 'styled-components';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { JotaiProvider } from './providers/JotaiProvider';
-
-const config = createConfig({
-  chains: [mainnet, sepolia, polygon],
-  transports: {
-    [mainnet.id]: http(),
-    [sepolia.id]: http(),
-    [polygon.id]: http(),
-  },
-  connectors: [injected()],
-});
+import Link from 'next/link';
+import { AppProviders } from './providers/AppProviders';
 
 const Container = styled.div`
   display: flex;
@@ -34,24 +20,41 @@ const Container = styled.div`
   padding: 0 1rem;
 `;
 
-export const queryClient = new QueryClient();
+const LeaderboardCard = styled.div`
+  background-color: #f8f9fa;
+  border-radius: 10px;
+  padding: 20px;
+  width: 100%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  margin-top: 2rem;
+`;
+
+const LeaderboardLink = styled(Link)`
+  display: inline-block;
+  background-color: #1890ff;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 500;
+  margin-top: 10px;
+  
+  &:hover {
+    background-color: #096dd9;
+  }
+`;
 
 export default function Home() {
   return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <ConnectKitProvider>
-          <JotaiProvider>
-            <Header>
-              <ConnectKitButton />
-              <SignIn />
-            </Header>
-            <Container>
-              <TokenBalances />
-            </Container>
-          </JotaiProvider>
-        </ConnectKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+    <AppProviders>
+      <Header>
+        <ConnectKitButton />
+        <SignIn />
+      </Header>
+      <Container>
+        <TokenBalances />
+      </Container>
+    </AppProviders>
   );
 }

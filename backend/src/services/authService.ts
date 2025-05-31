@@ -6,6 +6,7 @@ import { StatusCodes } from 'http-status-codes';
 import { SiweMessage } from 'siwe';
 import crypto from 'crypto';
 import { UserJwtPayload } from '@/types/express';
+import { updateLeaderboardEntry } from '@/services/leaderboardService';
 
 // Todo : add a DB? 🤔
 const nonceStore = new Map<string, { nonce: string; createdAt: number }>();
@@ -80,6 +81,9 @@ export const verifySiwe = async (message: string, signature: string) => {
       env.JWT_SECRET,
       { expiresIn: '1h' }
     );
+
+    // Update the leaderboard when user authenticates
+    await updateLeaderboardEntry(siweMessage.address, siweMessage.chainId);
 
     return new ServiceResponse(ResponseStatus.Success, 'Authentication successful', { token }, StatusCodes.OK);
   } catch (error) {

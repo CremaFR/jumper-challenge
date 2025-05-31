@@ -1,6 +1,7 @@
 import styled from 'styled-components';
 import React from 'react';
 import { NetworkSelector } from './NetworkSelector';
+import Link from 'next/link';
 
 const HeaderContainer = styled.header`
   display: flex;
@@ -22,6 +23,25 @@ const NetworkContainer = styled.div`
   margin-left: 1em;
 `;
 
+const Navigation = styled.nav`
+  display: flex;
+  align-items: center;
+  margin-left: 2em;
+`;
+
+const NavLink = styled(Link)`
+  color: #333;
+  text-decoration: none;
+  margin-right: 1.5em;
+  font-weight: 500;
+  font-size: 16px;
+  
+  &:hover {
+    color: #1890ff;
+    text-decoration: none;
+  }
+`;
+
 const ButtonsContainer = styled.div`
   display: flex;
   gap: 1rem;
@@ -35,9 +55,15 @@ interface HeaderProps {
 export function Header({ children }: HeaderProps) {
   return (
     <HeaderContainer>
-      <NetworkContainer>
-        <NetworkSelector />
-      </NetworkContainer>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <NetworkContainer>
+          <NetworkSelector />
+        </NetworkContainer>
+        <Navigation>
+          <NavLink href="/">Home</NavLink>
+          <NavLink href="/leaderboard">Leaderboard</NavLink>
+        </Navigation>
+      </div>
       <ButtonsContainer>{children}</ButtonsContainer>
     </HeaderContainer>
   );

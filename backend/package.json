@@ -14,10 +14,12 @@
     "format": "prettier --config .prettierrc --write .",
     "test": "vitest run",
     "test:dev": "vitest dev",
-    "test:cov": "vitest run --coverage"
+    "test:cov": "vitest run --coverage",
+    "populate-leaderboard": "tsx scripts/populate-leaderboard.ts"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^7.0.0",
+    "@prisma/client": "^6.8.2",
     "alchemy-sdk": "^3.5.10",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -29,6 +31,7 @@
     "http-status-codes": "^2.3.0",
     "jsonwebtoken": "^9.0.2",
     "pino-http": "^9.0.0",
+    "prisma": "^6.8.2",
     "siwe": "^3.0.0",
     "swagger-ui-express": "^5.0.0",
     "zod": "^3.22.4"

@@ -12,4 +12,5 @@ export const env = cleanEnv(process.env, {
   COMMON_RATE_LIMIT_WINDOW_MS: num({ devDefault: testOnly(1000) }),
   JWT_SECRET: str({ devDefault: testOnly('default-secret-change-this-in-production') }),
   ALCHEMY_API_KEY: str({ devDefault: testOnly('demo-api-key') }),
+  DATABASE_URL: str({ devDefault: testOnly('file:./dev.db') }),
 })
